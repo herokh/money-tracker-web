@@ -1,87 +1,80 @@
-import { Component } from "react";
-import { initializeApp } from "firebase/app";
-import TransactionList from "./components/TransactionList";
-import Login from "./components/Login";
+import { useEffect, useState } from "react";
+import Login from "./modules/auth/Login";
 import { getAuth } from "firebase/auth";
+import TransactionContainer from "./modules/transactions/TransactionContainer";
+import useFirebase from "./hooks/useFirebase";
+import Button from "./components/Button";
 
-class App extends Component {
-  constructor(props) {
-    super(props);
-    const firebaseConfig = {
-      apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-      authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-      databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL,
-      projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.REACT_APP_FIREBASE_APP_ID,
-    };
-
-    initializeApp(firebaseConfig);
-
-    this.state = {
-      isLoggedIn: false,
-    };
-  }
-
-  componentDidMount() {
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+  useFirebase();
+  useEffect(() => {
     const auth = getAuth();
-    auth.onAuthStateChanged((user) =>
-      this.setState({
-        isLoggedIn: user != null,
-      })
-    );
-  }
-
-  onSignInSuccess(userCredential) {
-    this.setState({
-      isLoggedIn: userCredential != null,
+    auth.onAuthStateChanged((user) => {
+      setIsLoggedIn(user != null);
+      setLoading(false);
     });
+  }, [isLoggedIn, setIsLoggedIn]);
+
+  const onSignInSuccess = (userCredential) => {
+    setIsLoggedIn(userCredential != null);
     alert("WELCOME K." + userCredential.user.email);
-  }
+  };
 
-  onSignInError(error) {
-    this.setState({
-      isLoggedIn: false,
-    });
+  const onSignInError = (error) => {
+    setIsLoggedIn(false);
     alert(error);
-  }
+  };
 
-  async logout(e) {
+  const logout = async (e) => {
     const auth = getAuth();
     await auth.signOut();
     alert("BYE BYE");
-  }
+  };
 
-  render() {
-    return (
-      <div className="App container is-fullheight">
-        <div className="content pt-4 pl-3 pr-3">
-          {this.state.isLoggedIn ? (
-            <div>
-              <nav className="has-text-right">
-                <button className="button" onClick={e => this.logout(e)}>Logout</button>
-              </nav>
-              <div>
-              <div className="mb-2">
-                  <strong className="is-size-2">Money Tracker App</strong>
-                  <div className="is-size-4">Internal purpose only.</div>
-              </div>
-              <div>
-                <TransactionList />
-              </div>
+  const appStyled = {
+    nav: {
+      backgroundColor: "#000",
+      color: "#fff",
+    },
+    innerNav: {
+      display: "flex",
+      alignItems: "center",
+      height: "42px",
+    },
+  };
+
+  return (
+    <div>
+      <div className="mb-2" style={appStyled.nav}>
+        <div className="container" style={appStyled.innerNav}>
+          <img src="/logo.jpg" alt="logo" style={{ width: "35px" }} />
+          {isLoggedIn && (
+            <div className="ml-auto">
+              <Button name="Logout" onClick={logout} />
             </div>
-            </div>
-          ) : (
-            <Login
-              onSignInSuccess={this.onSignInSuccess.bind(this)}
-              onSignInError={this.onSignInError.bind(this)}
-            />
           )}
         </div>
       </div>
-    );
-  }
-}
+      <div className="App container">
+        <div className="content p-4">
+          {loading && <div>Loading...</div>}
+          {!loading &&
+            (isLoggedIn ? (
+              <div>
+                <TransactionContainer />
+              </div>
+            ) : (
+              <Login
+                onSignInSuccess={onSignInSuccess}
+                onSignInError={onSignInError}
+              />
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default App;
