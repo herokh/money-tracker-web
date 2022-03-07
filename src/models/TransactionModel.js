@@ -1,3 +1,5 @@
+import { TransactionConst } from "../consts/TransactionConst";
+
 export default class TransactionModel {
   id;
   transactionType;
@@ -8,7 +10,7 @@ export default class TransactionModel {
 
   constructor() {
     this.id = null;
-    this.transactionType = this.DEDUCT;
+    this.transactionType = TransactionConst.DEDUCT;
     this.amount = 0;
     this.note = "";
     this.inserted = new Date();

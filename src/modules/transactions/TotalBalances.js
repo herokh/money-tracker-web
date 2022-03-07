@@ -1,15 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 const TotalBalances = (props) => {
-  const [transactionsList, setTransactionsList] = useState([]);
-  useEffect(() => {
-    setTransactionsList(props.transactionsList);
-  }, [props.transactionsList]);
-
-  const balances = transactionsList.reduce((initial, t) => {
-    return initial + +t.amount;
-  }, 0);
-
   var totalBalancesStyled = {
     balances: {
       fontSize: "3rem",
@@ -20,17 +11,19 @@ const TotalBalances = (props) => {
   };
 
   return (
-    <section class="hero">
-      <div class="hero-body">
-        <p class="title">{`Total Remaining Balances`}</p>
-        <p class="subtitle">
+    <section className="hero">
+      <div className="hero-body">
+        <p className="title">{`Total Remaining Balances`}</p>
+        <p className="subtitle">
           <span
             className={
-              balances > 0 ? "has-background-success" : "has-background-danger"
+              props.totalBalances > 0
+                ? "has-background-success"
+                : "has-background-danger"
             }
             style={totalBalancesStyled.balances}
           >
-            {balances.toFixed(2)} THB
+            {props.totalBalances.toFixed(2)} THB
           </span>
         </p>
       </div>

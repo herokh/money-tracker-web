@@ -1,83 +1,89 @@
-import React, { useEffect, useState } from "react";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  orderBy,
-  query,
-  addDoc,
-} from "firebase/firestore/lite";
+import React from "react";
 import TotalBalances from "./TotalBalances";
 import TransactionModifier from "./TransactionModifier";
 import Label from "../../components/Label";
 import TransactionList from "./TransactionList";
+import useTransaction from "../../hooks/useTransaction";
+import Button from "../../components/Button";
+import TransactionContext from "../../contexts/TransactionContext";
 
 const TransactionContainer = (props) => {
-  const [transactionsList, setTransactionsList] = useState([]);
-  const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    loadData();
-  }, []);
+  const [
+    transactionsView,
+    totalBalances,
+    loading,
+    updateView,
+    updateTotalBalances,
+    addNewTransaction,
+    updateTransaction,
+    deleteTransaction,
+  ] = useTransaction();
 
-  const addNewTransaction = async (model) => {
+  const handleAddNewTransaction = async (model) => {
     try {
-      const db = getFirestore();
-      const docRef = await addDoc(collection(db, "transactions"), model);
+      const docRef = await addNewTransaction(model);
+      await updateTotalBalances();
+      updateView();
       alert("Document written with ID: " + docRef.id);
-      loadData();
     } catch (e) {
       alert("Error adding document: " + e);
     }
   };
 
-  const loadData = () => {
-    const db = getFirestore();
-    const ref = collection(db, "transactions");
-    const q = query(ref, orderBy("inserted", "desc"));
-    setLoading(true);
-    getDocs(q).then((snapshot) => {
-      const transactionsList = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        const result = { ...data, ...{ id: doc.id } };
-        return result;
-      });
-      setTransactionsList(transactionsList);
-      setLoading(false);
-    });
+  const handleUpdateTotalBalances = async () => {
+    try {
+      const docRef = await updateTotalBalances();
+      console.log(docRef);
+    } catch (e) {
+      alert("Error update total balances: " + e);
+    }
   };
 
   return (
-    <div>
-      <div className="mt-4 mb-4">
-        <div className="columns is-multiline">
-          <div className="column is-6">
-            <div className="notification is-primary  is-light p-4">
-              <Label name="Add new transaction" />
-              <TransactionModifier onSubmitForm={addNewTransaction} />
+    <TransactionContext.Provider
+      value={[
+        updateTotalBalances,
+        updateView,
+        updateTransaction,
+        deleteTransaction,
+      ]}
+    >
+      <div>
+        <Button
+          name="Re-Calculate Total Balances"
+          onClick={handleUpdateTotalBalances}
+        />
+        <div className="mt-4 mb-4">
+          <div className="columns is-multiline">
+            <div className="column is-6">
+              <div className="notification is-primary  is-light p-4">
+                <Label name="Add new transaction" />
+                <TransactionModifier onSubmitForm={handleAddNewTransaction} />
+              </div>
+            </div>
+            <div className="column is-6">
+              <div className="has-text-centered">
+                <TotalBalances totalBalances={totalBalances} />
+              </div>
             </div>
           </div>
-          <div className="column is-6">
-            <div className="has-text-centered">
-              <TotalBalances transactionsList={transactionsList} />
+        </div>
+        <div className="mt-4 mb-4">
+          <div className="notification is-info is-light p-4">
+            <div className="mb-4">
+              <Label name="Transaction List" />
+            </div>
+            <div>
+              <TransactionList
+                transactionsList={transactionsView}
+                loading={loading}
+                loadData={updateView}
+              />
             </div>
           </div>
         </div>
       </div>
-      <div className="mt-4 mb-4">
-        <div className="notification is-info is-light p-4">
-          <div className="mb-4">
-            <Label name="Transaction List" />
-          </div>
-          <div>
-            <TransactionList
-              transactionsList={transactionsList}
-              loading={loading}
-              loadData={loadData}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+    </TransactionContext.Provider>
   );
 };
 

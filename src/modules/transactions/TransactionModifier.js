@@ -40,8 +40,9 @@ const TransactionModifier = (props) => {
     transactionModel.insertedBy = auth.currentUser.uid;
     transactionModel.amount =
       transactionModel.transactionType === TransactionConst.DEDUCT
-        ? -transactionModel.amount
-        : transactionModel.amount;
+        ? -+transactionModel.amount
+        : +transactionModel.amount;
+    delete transactionModel.transactionType;
     props.onSubmitForm(transactionModel);
     setTransactionModel(new TransactionModel());
   };
